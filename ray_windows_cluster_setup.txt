@@ -1,0 +1,69 @@
+Ray Cluster Setup for Windows (Head + Workers)
+=================================================
+
+I. Install Ray
+--------------
+pip install -U ray
+pip install -U "ray[default]"
+
+II. Head Node Script (head_start.bat)
+-------------------------------------
+@echo off
+echo -----------------------------------------
+echo   Starting RAY HEAD NODE
+echo -----------------------------------------
+
+set /p HEAD_IP=Nhap dia chi IP cua may head: 
+
+ray stop
+
+ray start --head ^
+    --node-ip-address=%HEAD_IP% ^
+    --port=6379 ^
+    --dashboard-host=0.0.0.0
+
+echo Head node da khoi dong thanh cong.
+pause
+
+III. Worker Node Script (worker_start.bat)
+------------------------------------------
+@echo off
+echo -----------------------------------------
+echo   Starting RAY WORKER NODE
+echo -----------------------------------------
+
+set /p HEAD_IP=Nhap IP cua HEAD NODE: 
+set /p WORKER_IP=Nhap IP cua may nay (WORKER): 
+
+ray stop
+
+ray start ^
+    --address="%HEAD_IP%:6379" ^
+    --node-ip-address=%WORKER_IP%
+
+echo Worker da ket noi thanh cong vao cluster.
+pause
+
+
+IV. Test Python Script (test_ray.py)
+------------------------------------
+import ray
+
+ray.init(address="auto")
+print("Cluster resources:", ray.cluster_resources())
+print("Available resources:", ray.available_resources())
+
+@ray.remote
+def f(x):
+    return x * x
+
+results = ray.get([f.remote(i) for i in range(20)])
+print("Results:", results)
+
+V. Dashboard
+------------
+http://10.0.0.1:8265
+
+VI. Stop Ray
+------------
+ray stop
