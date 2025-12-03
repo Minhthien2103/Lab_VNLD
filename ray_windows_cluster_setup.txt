@@ -45,6 +45,9 @@ echo Worker da ket noi thanh cong vao cluster.
 pause
 
 
+Download Library
+pip install numpy pandas cvxpy matplotlib statsmodels scipy scikit-learn mpmath joblib ray
+
 IV. Test Python Script (test_ray.py)
 ------------------------------------
 import ray
