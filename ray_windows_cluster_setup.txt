@@ -3,7 +3,7 @@ pip install -U "ray[default]"
     # Header
 ipconfig
 set RAY_ENABLE_WINDOWS_OR_OSX_CLUSTER=1
-ray start --head --port=6379 --dashboard-host=0.0.0.0
+ray start --head --port=6379 --dashboard-host=0.0.0.0 --node-ip-address="(Header_IP)"
 ray status
 
     # Worker (1 trong 2)
