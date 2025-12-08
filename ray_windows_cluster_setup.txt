@@ -1,10 +1,24 @@
-Ray Cluster Setup for Windows (Head + Workers)
-=================================================
-
-I. Install Ray
---------------
-pip install -U ray
 pip install -U "ray[default]"
+
+    # Header
+ipconfig
+set RAY_ENABLE_WINDOWS_OR_OSX_CLUSTER=1
+ray start --head --port=6379 --dashboard-host=0.0.0.0
+ray status
+
+    # Worker (1 trong 2)
+set RAY_ENABLE_WINDOWS_OR_OSX_CLUSTER=1
+ray start --address=(Header_IP):6379
+ray start --address="(Header_IP):6379" --node-ip-address=(Worker_IP)
+
+
+
+
+
+
+
+
+
 
 II. Head Node Script (head_start.bat)
 -------------------------------------
