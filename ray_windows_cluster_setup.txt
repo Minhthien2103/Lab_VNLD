@@ -12,7 +12,7 @@ ray start --address=(Header_IP):6379
 ray start --address="(Header_IP):6379" --node-ip-address=(Worker_IP)
 
 
-
+pip install numpy pandas cvxpy matplotlib statsmodels scipy scikit-learn mpmath joblib ray
 
 
 
@@ -58,9 +58,6 @@ ray start ^
 echo Worker da ket noi thanh cong vao cluster.
 pause
 
-
-Download Library
-pip install numpy pandas cvxpy matplotlib statsmodels scipy scikit-learn mpmath joblib ray
 
 IV. Test Python Script (test_ray.py)
 ------------------------------------
