@@ -994,7 +994,7 @@ def segment_worker(Z, Z0, Y0_mask, outliers_obs, lambda_w, lambda_d, alpha, gamm
 
 		info_w = training_qp_w(Pw_z, Kw_z, q0w_z, q1w_z, Sw_z, hw_z, Z, lambda_w, alpha)
 		if info_w == None:
-			return None, None, None
+			return None, None, None, None, None, None
 
 		w_z = info_w['w_plus'] - info_w['w_minus']
 		Q_wz = info_w['Q']
@@ -1007,7 +1007,7 @@ def segment_worker(Z, Z0, Y0_mask, outliers_obs, lambda_w, lambda_d, alpha, gamm
 		KKT_w = check_KKT(Q_wz, f_wz, Sw_z, hw_z, t_wz, v_zw)
 		if not KKT_w:
 			print(' | W Unsatisfy KKT Condition')
-			return None, None, None
+			return None, None, None, None, None, None
 		
 			# --------------------------------- TRAINING DELTA ---------------------------------
 		Pd_z, Kd_z, q0d_z, q1d_z, Sd_z, hd_z, u0d_z, u1d_z = Construct_matrix(Z0, Y0z, gamma)
@@ -1018,7 +1018,7 @@ def segment_worker(Z, Z0, Y0_mask, outliers_obs, lambda_w, lambda_d, alpha, gamm
 
 		info_d = training_qp_delta(Pd_z, Kd_z, q0d_z, q1d_z, Sd_z, hd_z, Z0, lambda_d, alpha)
 		if info_d == None:
-			return None, None, None
+			return None, None, None, None, None, None
 
 		d_z = info_d['d_plus'] - info_d['d_minus']
 		Q_dz = info_d['Q']
@@ -1032,7 +1032,7 @@ def segment_worker(Z, Z0, Y0_mask, outliers_obs, lambda_w, lambda_d, alpha, gamm
 		KKT_d = check_KKT(Q_dz, f_dz, Sd_z, hd_z, t_dz, v_dz)
 		if not KKT_d:
 			print(' | DELTA Unsatisfy KKT Condition')
-			return None, None, None
+			return None, None, None, None, None, None
 
 		Beta_z = w_z + d_z
 
@@ -1375,7 +1375,7 @@ def run(test_instances, seed):
 
 		# ------------------------------------------------ RoSI - TL ------------------------------------------------
 	# list_zk, list_g_beta, list_l_beta, list_zk_OC, list_g_OC, list_l_OC = triple_parametric(Z, Z0, Y0_mask, outliers_obs, lambda_w, lambda_d, alpha, gamma, a_y, b_y, xi_threshold, threshold, etajT_Yobs, verbose = False)
-	list_zk, list_g_beta, list_l_beta, list_zk_OC, list_g_OC, list_l_OC = divide_and_conquer(Z, Z0, Y0_mask, outliers_obs, lambda_w, lambda_d, alpha, gamma, a_y, b_y, xi_threshold, etajT_Yobs, z_min = -threshold, z_max = threshold, num_segments = 12)
+	list_zk, list_g_beta, list_l_beta, list_zk_OC, list_g_OC, list_l_OC = divide_and_conquer(Z, Z0, Y0_mask, outliers_obs, lambda_w, lambda_d, alpha, gamma, a_y, b_y, xi_threshold, etajT_Yobs, z_min = -threshold, z_max = threshold, num_segments = 16)
 
 	if list_zk == None or list_zk == []:
 		if list_zk == None:
@@ -1404,8 +1404,14 @@ def run(test_instances, seed):
 			print(f'list_zk_OC len: {len(list_zk_OC)}')
 
 		return None, None, None, None, None, None
+	
+	intervals_lemma_OC = Lemma_3(list_zk_OC, list_l_OC, list_g_OC, xi_threshold, outliers_obs)
 
-	pivot_OC = compute_pivot([list_zk_OC], etaj, etajT_Yobs, Sigma, tn_mu)
+	if intervals_lemma_OC == []:
+		print("Interval lemma OC = []")
+		return None, None, None, None, None, None
+
+	pivot_OC = compute_pivot(intervals_lemma_OC, etaj, etajT_Yobs, Sigma, tn_mu)
 
 	P_value_naive = naive_p_value(etajT_Yobs, etaj, tn_mu)
 	P_value_bon = bonferroni(P_value_naive, nT)
@@ -1501,4 +1507,5 @@ if __name__ == '__main__':
 
 	# print(f"FPR_naive: {FPR_naive}, FPR_bon: {FPR_bon}, FPR_RoSI: {FPR_RoSI}, FPR_OC: {FPR_OC}")
 	# print(f"list_pvalue_Rosi: {list_pvalue_Rosi}")
+
 	# print(f"list_pvalue_Rosi_OC: {list_pvalue_Rosi_OC}")
