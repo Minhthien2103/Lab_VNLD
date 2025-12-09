@@ -78,6 +78,8 @@ def generate_data(p, nS, nT, num_info_aux, num_uninfo_aux, num_outliers, h_param
 		# mix = np.random.choice([0, 1], size = N_vec[k], p = [0.9, 0.1])
 		# noise = np.where(mix == 0, np.random.normal(0, 1, size = N_vec[k]), np.random.normal(0, 100, size = N_vec[k]))
 
+		noise = noise / np.std(noise)
+
 		Yk = true_Yk + noise
 
 		if k == K and num_outliers > 0:
@@ -1106,22 +1108,14 @@ def segment_worker(Z, Z0, Y0_mask, outliers_obs, lambda_w, lambda_d, alpha, gamm
 # 1. Kết nối cluster (chỉ làm 1 lần ở đầu chương trình)
 # address='auto' sẽ nối vào cụm 3 máy của bạn
 if not ray.is_initialized():
-    ray.init(address = 'auto') 
+    print("Connecting to Ray Cluster...")
+    ray.init(address='auto')
+    register_ray()
 
 # 2. Đăng ký Ray làm backend cho Joblib
 register_ray()
 
 def divide_and_conquer(Z, Z0, Y0_mask, outliers_obs, lambda_w, lambda_d, alpha, gamma, a_y, b_y, xi_threshold, etajT_Yobs, z_min, z_max, num_segments = None):
-    
-    # --- BƯỚC 1: CẤU HÌNH RAY CLUSTER ---
-    # Kiểm tra xem đã kết nối Ray chưa, nếu chưa thì kết nối
-    if not ray.is_initialized():
-        print("Đang kết nối tới Ray Cluster...")
-        ray.init(address = 'auto')
-        
-    # Đăng ký Ray làm backend cho Joblib
-    register_ray()
-    
     # Lấy tổng số core thực tế của cả cụm (Hy vọng là 48)
     total_cores_cluster = int(ray.cluster_resources().get("CPU", 1))
     print(f"Đang chạy trên Cluster với tổng {total_cores_cluster} Cores.")
@@ -1190,7 +1184,7 @@ def run(test_instances, seed):
 	N = nS * K + nT
 	num_outliers = 0
 
-	Z, Z0, Y, Y0, true_Y, Sigma = generate_data(p, nS, nT, num_info_aux, num_uninfo_aux, num_outliers, h_parameter, rho)
+	Z, Z0, Y, Y0, true_Y, Sigma, outlier_true = generate_data(p, nS, nT, num_info_aux, num_uninfo_aux, num_outliers, h_parameter)
 
 		# ------------------ Blog Feedback Real Data ------------------
 	# file_path = r"Real_Data\Blog_Feedback\blogData_train.csv"
@@ -1375,7 +1369,7 @@ def run(test_instances, seed):
 
 		# ------------------------------------------------ RoSI - TL ------------------------------------------------
 	# list_zk, list_g_beta, list_l_beta, list_zk_OC, list_g_OC, list_l_OC = triple_parametric(Z, Z0, Y0_mask, outliers_obs, lambda_w, lambda_d, alpha, gamma, a_y, b_y, xi_threshold, threshold, etajT_Yobs, verbose = False)
-	list_zk, list_g_beta, list_l_beta, list_zk_OC, list_g_OC, list_l_OC = divide_and_conquer(Z, Z0, Y0_mask, outliers_obs, lambda_w, lambda_d, alpha, gamma, a_y, b_y, xi_threshold, etajT_Yobs, z_min = -threshold, z_max = threshold, num_segments = 16)
+	list_zk, list_g_beta, list_l_beta, list_zk_OC, list_g_OC, list_l_OC = divide_and_conquer(Z, Z0, Y0_mask, outliers_obs, lambda_w, lambda_d, alpha, gamma, a_y, b_y, xi_threshold, etajT_Yobs, z_min = -threshold, z_max = threshold, num_segments = 108)
 
 	if list_zk == None or list_zk == []:
 		if list_zk == None:
@@ -1439,8 +1433,8 @@ def run_synthetic(test_instances):
 	start = time.time()
 
 	while iter <= Iteration:
-		np.random.seed(seed)
-		print(f'Iter: {iter}, Seed: {seed}')
+		# np.random.seed(seed)
+		print(f'Iter: {iter}')
 
 		start_iter = time.time()
 		pivot, P_value_naive, P_value_bon, pivot_OC, intervals, len_outlier_obs = run(test_instances, seed)
